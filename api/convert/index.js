@@ -1,14 +1,7 @@
 const { convertTextToSpeech } = require('../../src/convert.js');
 const cors = require('cors');
 
-const corsOptions = {
-    origin: 'http://localhost:3000',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: ['Content-Type'],
-    optionsSuccessStatus: 204
-};
-
-const corsMiddleware = cors({ origin: '*' });
+const corsMiddleware = cors();
 
 module.exports = async (req, res) => {
     corsMiddleware(req, res, async (err) => {

@@ -9,7 +9,7 @@ process.env.GOOGLE_APPLICATION_CREDENTIALS = credentialsPath;
 require('dotenv').config();
 
 const deletePreviousAudioFiles = async () => {
-    const outputDir = path.resolve(__dirname, '..', 'output');
+    const outputDir = '/tmp';
     const files = fs.readdirSync(outputDir);
     files.forEach(file => {
         if (path.extname(file) === '.mp3') {
