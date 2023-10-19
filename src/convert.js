@@ -42,7 +42,7 @@ const convertTextToSpeech = async (params) => {
     const writeFile = util.promisify(fs.writeFile);
 
     const outputFileName = `output_${Date.now()}.mp3`;
-    const outputPath = path.resolve(__dirname, '..', 'output', outputFileName);
+    const outputPath = path.join('/tmp', outputFileName); // <-- CHANGED THIS LINE
     await writeFile(outputPath, audioContent, 'binary');
 
     return `${outputFileName}`;
