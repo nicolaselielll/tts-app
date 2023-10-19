@@ -1,10 +1,18 @@
-const { convertTextToSpeech } = require('../src/convert');
+const { convertTextToSpeech } = require('../../src/convert.js');
 const cors = require('cors');
 
-const corsMiddleware = cors();
+const corsOptions = {
+    origin: 'http://localhost:3000',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: ['Content-Type'],
+    optionsSuccessStatus: 204
+};
+
+const corsMiddleware = cors({ origin: '*' });
 
 module.exports = async (req, res) => {
-    corsMiddleware(req, res, async () => {
+    corsMiddleware(req, res, async (err) => {
+        if (err) return res.status(500).send(err);
         try {
             const text = req.body.text;
             const lang = req.body.lang || 'en-US';
@@ -29,5 +37,5 @@ module.exports = async (req, res) => {
             console.error(error);
             res.status(500).json({ success: false, message: 'An error occurred.' });
         }
-    })
+    });
 };

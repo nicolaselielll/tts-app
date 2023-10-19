@@ -2,11 +2,11 @@
     "version": 2,
     "builds": [
       {
-        "src": "/api/convert.js",
+        "src": "/api/convert/index.js",
         "use": "@vercel/node"
       },
       {
-        "src": "/api/voices.js",
+        "src": "/api/voices/index.js",
         "use": "@vercel/node"
       }
     ]
