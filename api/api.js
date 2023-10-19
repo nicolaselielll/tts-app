@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { convertTextToSpeech, fetchAvailableVoices } = require('./src/convert');
+const { convertTextToSpeech, fetchAvailableVoices } = require('../src/convert');
 const app = express();
 const port = 3001;
 
