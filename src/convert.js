@@ -26,23 +26,28 @@ const convertTextToSpeech = async (params) => {
         input: { text: JSON.stringify(params.text) },
         voice: { languageCode: params.lang, ssmlGender: 'NEUTRAL', name: params.voice },
         audioConfig: { audioEncoding: 'MP3' },
-        effectsProfileId: [
-            "small-bluetooth-speaker-class-device"
-        ],
+        effectsProfileId: ["small-bluetooth-speaker-class-device"],
     };
 
-    const response = await client.synthesizeSpeech(request);
-    console.log(response[0].audioContent);
-
-    const audioContent = response[0].audioContent;
+    let audioContent;
+    if (Buffer.from(JSON.stringify(params.text)).length > 5000) {
+        console.log('USED THE LONG AUDIO API')
+        // Use longrunningsynthesize for texts exceeding 5000 bytes
+        const [operation] = await client.longrunningsynthesize(request);
+        const [response] = await operation.promise();
+        audioContent = response.audioContent;
+    } else {
+        console.log('USED THE SHORT AUDIO API')
+        const [response] = await client.synthesizeSpeech(request);
+        audioContent = response.audioContent;
+    }
 
     // Delete any existing audio files before writing a new one
     await deletePreviousAudioFiles();
 
     const writeFile = util.promisify(fs.writeFile);
-
     const outputFileName = `audio_${Date.now()}.mp3`;
-    const outputPath = path.join('/tmp', outputFileName); // <-- CHANGED THIS LINE
+    const outputPath = path.join('/tmp', outputFileName);
     await writeFile(outputPath, audioContent, 'binary');
 
     return `${outputFileName}`;
