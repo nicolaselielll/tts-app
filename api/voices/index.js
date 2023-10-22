@@ -1,4 +1,4 @@
-const { fetchAvailableVoices } = require('../../src/convert');
+const fetchAvailableVoices = require('../../src/voices');
 const cors = require('cors');
 
 const corsMiddleware = cors();

@@ -1,6 +1,5 @@
 const tts = require('@google-cloud/text-to-speech');
-const fs = require('fs');
-const util = require('util');
+const {Storage} = require('@google-cloud/storage');
 const path = require('path');
 
 const credentialsPath = path.resolve(__dirname, '..', 'tts-creds.json');
@@ -10,43 +9,41 @@ require('dotenv').config();
 
 const convertTextToSpeech = async (params) => {
     const ttsLongClient = new tts.TextToSpeechLongAudioSynthesizeClient();
-    console.log('LANG', params.lang);
+
+    const outputFileName = `audio_${Date.now()}.wav`;
 
     const longRequest = {
         input: { text: params.text },
         voice: { languageCode: params.lang, ssmlGender: 'NEUTRAL', name: params.voice },
         audioConfig: { audioEncoding: 'LINEAR16' },
         parent: 'projects/tts-app-395420/locations/global',
-        outputGcsUri: 'gs://tts-audio-bucket/audio/test.wav'
+        outputGcsUri: `gs://tts-audio-bucket/audio/${outputFileName}`
     };
 
-    console.log('USED THE LONG AUDIO API');
-    const [operation] = await ttsLongClient.synthesizeLongAudio(longRequest);
-    const [response] = await operation.promise();
-    const audioContent = response.audioContent;
+    await ttsLongClient.synthesizeLongAudio(longRequest);
 
-    const writeFile = util.promisify(fs.writeFile);
-    const outputFileName = `audio_${Date.now()}.wav`;
-    const outputPath = path.join('/tmp', outputFileName);
-    await writeFile(outputPath, audioContent, 'binary');
-
-    return `${outputFileName}`;
+    // Instead of writing the file to /tmp, generate a signed URL for the file in the bucket
+    const signedUrl = await generateSignedUrl('tts-audio-bucket', `audio/${outputFileName}`);
+    
+    return signedUrl; // This now returns the signed URL which can be accessed directly by the client
 }
 
-const fetchAvailableVoices = async (languageCode) => {
-    const client = new tts.TextToSpeechClient();
-    const [response] = await client.listVoices({languageCode});
+const generateSignedUrl = async (bucketName, fileName) => {
+    const storage = new Storage();
+    const bucket = storage.bucket(bucketName);
+    const file = bucket.file(fileName);
 
-    const voices = response.voices.map(voice => ({
-        name: voice.name,
-        gender: voice.ssmlGender,
-        language: voice.languageCodes[0],
-    }));
+    // These options will allow temporary read access to the file
+    const options = {
+        version: 'v4',
+        action: 'read',
+        expires: Date.now() + 60 * 60 * 1000, // 60 minutes
+    };
 
-    return voices;
+    // Get a signed URL for the file
+    const [signedUrl] = await file.getSignedUrl(options);
+
+    return signedUrl;
 }
 
-module.exports = {
-    convertTextToSpeech,
-    fetchAvailableVoices
-}
+module.exports = convertTextToSpeech
