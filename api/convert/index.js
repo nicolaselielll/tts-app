@@ -13,7 +13,7 @@ module.exports = async (req, res) => {
         try {
             const text = body.text;
             const lang = body.lang || 'en-US';
-            const voice = body.voice;
+            const voice = body.voice || 'en-US-Neural2-A';
 
             console.log('TEXT', text)
 
