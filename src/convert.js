@@ -8,45 +8,25 @@ process.env.GOOGLE_APPLICATION_CREDENTIALS = credentialsPath;
 
 require('dotenv').config();
 
-const deletePreviousAudioFiles = async () => {
-    const outputDir = '/tmp';
-    const files = fs.readdirSync(outputDir);
-    files.forEach(file => {
-        if (path.extname(file) === '.mp3') {
-            fs.unlinkSync(path.join(outputDir, file));
-        }
-    });
-}
-
 const convertTextToSpeech = async (params) => {
-    const client = new tts.TextToSpeechClient();
+    const ttsLongClient = new tts.TextToSpeechLongAudioSynthesizeClient();
     console.log('LANG', params.lang);
 
-    const request = {
-        input: { text: JSON.stringify(params.text) },
+    const longRequest = {
+        input: { text: params.text },
         voice: { languageCode: params.lang, ssmlGender: 'NEUTRAL', name: params.voice },
-        audioConfig: { audioEncoding: 'MP3' },
-        effectsProfileId: ["small-bluetooth-speaker-class-device"],
+        audioConfig: { audioEncoding: 'LINEAR16' },
+        parent: 'projects/tts-app-395420/locations/global',
+        outputGcsUri: 'gs://tts-audio-bucket/audio/test.wav'
     };
 
-    let audioContent;
-    if (Buffer.from(JSON.stringify(params.text)).length > 5000) {
-        console.log('USED THE LONG AUDIO API')
-        // Use longrunningsynthesize for texts exceeding 5000 bytes
-        const [operation] = await client.longrunningsynthesize(request);
-        const [response] = await operation.promise();
-        audioContent = response.audioContent;
-    } else {
-        console.log('USED THE SHORT AUDIO API')
-        const [response] = await client.synthesizeSpeech(request);
-        audioContent = response.audioContent;
-    }
-
-    // Delete any existing audio files before writing a new one
-    await deletePreviousAudioFiles();
+    console.log('USED THE LONG AUDIO API');
+    const [operation] = await ttsLongClient.synthesizeLongAudio(longRequest);
+    const [response] = await operation.promise();
+    const audioContent = response.audioContent;
 
     const writeFile = util.promisify(fs.writeFile);
-    const outputFileName = `audio_${Date.now()}.mp3`;
+    const outputFileName = `audio_${Date.now()}.wav`;
     const outputPath = path.join('/tmp', outputFileName);
     await writeFile(outputPath, audioContent, 'binary');
 

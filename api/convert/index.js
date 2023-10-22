@@ -30,7 +30,7 @@ module.exports = async (req, res) => {
             const audioPath = path.join('/tmp', outputFile);
             const audioData = fs.readFileSync(audioPath);
             console.log('OUTPUT', outputFile)
-            res.setHeader('Content-Type', 'audio/mpeg');
+            res.setHeader('Content-Type', 'audio/wav');
             res.send(audioData);
 
         } catch (error) {
