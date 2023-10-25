@@ -28,7 +28,7 @@ module.exports = async (req, res) => {
             });
 
             // Return the signed URL to the client
-            res.status(200).json({ success: true, signedURL: audioURL });
+            res.status(200).json({ success: true, audioURL: audioURL });
 
         } catch (error) {
             console.error(error);
