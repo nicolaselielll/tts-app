@@ -2,14 +2,15 @@ const tts = require('@google-cloud/text-to-speech');
 const {Storage} = require('@google-cloud/storage');
 const path = require('path');
 
+const ttsLongClient = new tts.TextToSpeechLongAudioSynthesizeClient();
+const storage = new Storage();
+
 const credentialsPath = path.resolve(__dirname, '..', 'tts-creds.json');
 process.env.GOOGLE_APPLICATION_CREDENTIALS = credentialsPath;
 
 require('dotenv').config();
 
 const convertTextToSpeech = async (params) => {
-    const ttsLongClient = new tts.TextToSpeechLongAudioSynthesizeClient();
-
     const outputFileName = `audio_${Date.now()}.wav`;
 
     const longRequest = {
@@ -29,7 +30,6 @@ const convertTextToSpeech = async (params) => {
 }
 
 const generateSignedUrl = async (bucketName, fileName) => {
-    const storage = new Storage();
     const bucket = storage.bucket(bucketName);
     const file = bucket.file(fileName);
 
