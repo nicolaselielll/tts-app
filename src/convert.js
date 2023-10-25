@@ -21,29 +21,17 @@ const convertTextToSpeech = async (params) => {
         outputGcsUri: `gs://tts-audio-bucket/audio/${outputFileName}`
     };
 
-    await ttsLongClient.synthesizeLongAudio(longRequest);
+    const [operation] = await ttsLongClient.synthesizeLongAudio(longRequest);
+    const [response] = await operation.promise();
 
-    // Instead of writing the file to /tmp, generate a signed URL for the file in the bucket
-    const signedUrl = await generateSignedUrl('tts-audio-bucket', `audio/${outputFileName}`);
-    
-    return signedUrl; // This now returns the signed URL which can be accessed directly by the client
-}
+    // Fetch the audio from GCS
+    const bucket = storage.bucket('tts-audio-bucket');
+    const file = bucket.file(fileLocation);
+    const [audioContent] = await file.download();
 
-const generateSignedUrl = async (bucketName, fileName) => {
-    const bucket = storage.bucket(bucketName);
-    const file = bucket.file(fileName);
+    console.log('AUDIO CONTENT', audioContent)
 
-    // These options will allow temporary read access to the file
-    const options = {
-        version: 'v4',
-        action: 'read',
-        expires: Date.now() + 60 * 60 * 1000, // 60 minutes
-    };
-
-    // Get a signed URL for the file
-    const [signedUrl] = await file.getSignedUrl(options);
-
-    return signedUrl;
+    return audioContent;
 }
 
 module.exports = convertTextToSpeech
