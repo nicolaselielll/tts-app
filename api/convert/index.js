@@ -21,14 +21,14 @@ module.exports = async (req, res) => {
                 return res.status(400).json({ success: false, message: 'No text provided.' });
             }
 
-            const signedURL = await convertTextToSpeech({ 
+            const audioURL = await convertTextToSpeech({ 
                 text: text, 
                 lang: lang,
                 voice: voice
             });
 
             // Return the signed URL to the client
-            res.status(200).json({ success: true, signedURL: signedURL });
+            res.status(200).json({ success: true, signedURL: audioURL });
 
         } catch (error) {
             console.error(error);
