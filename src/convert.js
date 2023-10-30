@@ -1,49 +1,39 @@
-const tts = require('@google-cloud/text-to-speech');
-const {Storage} = require('@google-cloud/storage');
 const path = require('path');
-
-const ttsLongClient = new tts.TextToSpeechLongAudioSynthesizeClient();
-const storage = new Storage();
-
-const credentialsPath = path.resolve(__dirname, '..', 'tts-creds.json');
-process.env.GOOGLE_APPLICATION_CREDENTIALS = credentialsPath;
-
-require('dotenv').config();
+const AWS = require('aws-sdk');
 
 const convertTextToSpeech = async (params) => {
-    const outputFileName = `audio_${Date.now()}.wav`;
 
-    const longRequest = {
-        input: { text: params.text },
-        voice: { languageCode: params.lang, ssmlGender: 'NEUTRAL', name: params.voice },
-        audioConfig: { audioEncoding: 'LINEAR16' },
-        parent: 'projects/tts-app-395420/locations/global',
-        outputGcsUri: `gs://tts-audio-bucket/audio/${outputFileName}`
+    // Configure AWS with your access and secret key.
+    // It's recommended to set these environment variables in your environment or use IAM roles.
+    AWS.config.update({
+        accessKeyId: process.env.ACCESS_KEY,
+        secretAccessKey: process.env.SECRET_ACCESS_KEY,
+        region: 'eu-central-1'  // For example, set your region
+    });
+
+    const polly = new AWS.Polly();
+
+    let params = {
+        'Text': 'Hello from Amazon Polly!',
+        'OutputFormat': 'mp3',
+        'VoiceId': 'Joanna'
     };
 
-    await ttsLongClient.synthesizeLongAudio(longRequest);
-
-    // Instead of writing the file to /tmp, generate a signed URL for the file in the bucket
-    const signedUrl = await generateSignedUrl('tts-audio-bucket', `audio/${outputFileName}`);
-    
-    return signedUrl; // This now returns the signed URL which can be accessed directly by the client
-}
-
-const generateSignedUrl = async (bucketName, fileName) => {
-    const bucket = storage.bucket(bucketName);
-    const file = bucket.file(fileName);
-
-    // These options will allow temporary read access to the file
-    const options = {
-        version: 'v4',
-        action: 'read',
-        expires: Date.now() + 60 * 60 * 1000, // 60 minutes
-    };
-
-    // Get a signed URL for the file
-    const [signedUrl] = await file.getSignedUrl(options);
-
-    return signedUrl;
+    polly.synthesizeSpeech(params, (err, data) => {
+        if (err) {
+            console.log(err.code);
+        } else if (data) {
+            if (data.AudioStream instanceof Buffer) {
+                // Save the synthesized speech to a file
+                require('fs').writeFile('speech.mp3', data.AudioStream, (err) => {
+                    if (err) {
+                        return console.log(err)
+                    }
+                    console.log("The file was saved!")
+                });
+            }
+        }
+    });
 }
 
 module.exports = convertTextToSpeech
